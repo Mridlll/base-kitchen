@@ -11,6 +11,7 @@ let rand = mulberry32(seed);
 const randn = () => { let u = 0, v = 0; while (!u) u = rand(); while (!v) v = rand(); return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v); };
 const fmt = (x, d = 1) => (x >= 0 ? "+" : "−") + Math.abs(x).toFixed(d);
 const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
+const shareOf = x => `${Math.max(0, 4 + x).toFixed(1)}%`;   // millet share of lunches after a change of x per 100, from the 4% baseline
 const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 
 /* ---------- live session hooks (js/live.js; no-ops in solo) ---------- */
@@ -361,7 +362,7 @@ R.act2 = () => {
 const FC = [
   {id:"f1",title:"Defaults at Danish conferences",cite:"Hansen et al. 2019",q:"Before the change, 2 to 13% of attendees chose vegetarian lunch. Then vegetarian became the default, with meat still available on request. What share chose vegetarian?",min:0,max:100,step:1,unit:"%",truth:87,start:30,tol:30,take:"Between 86 and 89%. Nobody was stopped from choosing meat. Only the form changed."},
   {id:"f2",title:"Influencers and children's snacks",cite:"Coates et al. 2019",q:"Children aged 9 to 11 who saw unhealthy snack posts from influencers ate 448 kcal more. What did healthy snack posts do to healthy snack intake, in kcal?",min:-100,max:500,step:10,unit:" kcal",truth:0,start:200,tol:180,take:"No significant effect. Commercial promotion works; healthy counter-content is much weaker."},
-  {id:"f3",title:"Journals versus nudge units",cite:"DellaVigna and Linos 2022",q:"In academic journals, the average nudge raised take-up by 8.7 percentage points. Across 126 trials run by government nudge units, reaching 23 million people, what was it?",min:0,max:10,step:.1,unit:" pp",truth:1.4,start:6,tol:4,take:"1.4 pp. Most of the gap comes from selective publication and low power."},
+  {id:"f3",title:"Journals versus nudge units",cite:"DellaVigna and Linos 2022",q:"In academic journals, the average nudge got 8.7 more people in every 100 to take up the option it promoted. Across 126 trials run by government nudge units, reaching 23 million people, how many more in every 100?",min:0,max:10,step:.1,unit:" more per 100",truth:1.4,start:6,tol:4,take:"About 1.4 more per 100. Most of the gap comes from journals printing mainly the studies that worked, and from studies too small to tell a real effect from luck."},
   {id:"f4",title:"Chile's 2016 food law",cite:"Taillie et al. 2020",q:"Warning labels, limits on child-directed marketing and school sales bans, together. How much did purchases of 'high-in' beverages change?",min:-50,max:0,step:.5,unit:"%",truth:-23.7,start:-5,tol:18,take:"−23.7%. The biggest shifts come from structural policy with behavioural design in it, not from design alone."}
 ];
 R.forecast = () => {
@@ -410,16 +411,16 @@ R.forecast = () => {
 
 /* ---------- Act 3: Design ---------- */
 const LEVERS = [
-  {id:"default",name:"Millet main as the default lunch, three days a week",cost:10,tags:["Environmental restructuring","TIPPME: availability"]},
-  {id:"circular",name:"Zonal circular: millet days are allowed, with a menu template",cost:15,tags:["Enablement","Reflective motivation"]},
-  {id:"contract",name:"FPO rate contract, plus top-up to close the ₹8/kg gap",cost:35,tags:["Enablement","Incentivisation"]},
-  {id:"training",name:"Volume-cooking sessions with a chef who's done it",cost:20,tags:["Training","Modelling"]},
-  {id:"names",name:"Taste-first dish names at the counter",cost:5,tags:["Persuasion","TIPPME: information"]},
-  {id:"position",name:"Millet dish placed first in the line",cost:5,tags:["Environmental restructuring","TIPPME: position"]},
-  {id:"scoop",name:"Smaller rice scoop, bigger dal bowl",cost:5,tags:["Environmental restructuring","TIPPME: size"]},
-  {id:"posters",name:"'Millets are healthy' posters in every mess",cost:20,tags:["Education"]},
-  {id:"influencer",name:"Food influencer campaign on staff WhatsApp groups",cost:25,tags:["Persuasion"]},
-  {id:"ban",name:"No rice at all on millet days",cost:5,tags:["Restriction"]}
+  {id:"default",name:"Millet main as the default lunch, three days a week",cost:10,desc:"On three weekdays, the lunch counter serves a millet dish as the main meal. Rice or roti is still given to anyone who asks for it.",tags:["Environmental restructuring","TIPPME: availability"]},
+  {id:"circular",name:"Zonal circular: millet days are allowed, with a menu template",cost:15,desc:"The zone sends every kitchen an official letter saying millet days are allowed, with a ready-made millet menu the planner can copy.",tags:["Enablement","Reflective motivation"]},
+  {id:"contract",name:"FPO rate contract, plus top-up to close the ₹8/kg gap",cost:35,desc:"The zone signs a fixed-price deal with farmer producer organisations (FPOs) to supply millet flour, and pays the ₹8/kg difference so millet costs kitchens no more than wheat atta.",tags:["Enablement","Incentivisation"]},
+  {id:"training",name:"Volume-cooking sessions with a chef who's done it",cost:20,desc:"A chef who has cooked millet meals for hundreds of people visits each kitchen and cooks alongside the staff until they can do it on their own.",tags:["Training","Modelling"]},
+  {id:"names",name:"Taste-first dish names at the counter",cost:5,desc:"Millet dishes get tasty-sounding names on the counter menu, like \"crispy ragi dosa\", instead of plain labels like \"millet dish\".",tags:["Persuasion","TIPPME: information"]},
+  {id:"position",name:"Millet dish placed first in the line",cost:5,desc:"The millet dish is put first in the serving line, so people see it and reach it before they get to the rice.",tags:["Environmental restructuring","TIPPME: position"]},
+  {id:"scoop",name:"Smaller rice scoop, bigger dal bowl",cost:5,desc:"Rice is served with a smaller spoon and dal comes in a bigger bowl, so a normal plate ends up with less rice on it.",tags:["Environmental restructuring","TIPPME: size"]},
+  {id:"posters",name:"'Millets are healthy' posters in every mess",cost:20,desc:"Posters in every dining hall explain that millets are good for your health.",tags:["Education"]},
+  {id:"influencer",name:"Food influencer campaign on staff WhatsApp groups",cost:25,desc:"A well-known food personality posts about millets in the staff WhatsApp groups.",tags:["Persuasion"]},
+  {id:"ban",name:"No rice at all on millet days",cost:5,desc:"On millet days, rice is taken off the menu completely, so there is no rice to choose.",tags:["Restriction"]}
 ];
 const BUDGET = 100;
 function trueEffect(levers, decay){
@@ -442,7 +443,7 @@ R.act3 = () => {
   stage.innerHTML = `
     <p class="act-tag">Act 3 of 5, about 5 minutes</p>
     <h2>Spend the budget</h2>
-    <p>You have ₹${BUDGET} lakh for the pilot menu cycle. Pick any combination of levers that fits. You won't see effect sizes here. You'll find out what worked in Act 4.</p>
+    <p>You have ₹${BUDGET} lakh for the pilot menu cycle. Each card is one thing you could spend money on. Tap a card to add it to your plan, tap again to remove it, and pick any mix that fits the budget. You won't see effect sizes here. You'll find out what worked in Act 4.</p>
     <div class="budget"><div style="display:flex;justify-content:space-between;font-weight:700"><span>Budget used</span><span id="bud"></span></div><div class="budget-bar"><div class="budget-fill" id="budFill"></div></div></div>
     <div class="levers" id="levers"></div>
     <div id="a3out"></div>
@@ -451,7 +452,7 @@ R.act3 = () => {
   const draw = () => {
     $("#levers").innerHTML = LEVERS.map(l => `
       <button type="button" class="lever" data-id="${l.id}" aria-pressed="${S.levers.has(l.id)}" ${S.act3Done?"disabled":""}>
-        <b>${l.name}</b><span class="tags">${l.tags.map(t=>`<span class="tagp">${t}</span>`).join("")}</span><span class="cost">₹${l.cost} lakh</span>
+        <b>${l.name}</b><span class="ldesc">${esc(l.desc)}</span><span class="tags">${l.tags.map(t=>`<span class="tagp">${t}</span>`).join("")}</span><span class="cost">₹${l.cost} lakh</span>
       </button>`).join("");
     const s = spent();
     $("#bud").textContent = `₹${s} of ₹${BUDGET} lakh`;
@@ -634,9 +635,9 @@ R.act4 = () => {
         <div class="row"><button class="btn" id="sc">Scale it to 400 kitchens</button></div></div>`;
       say("Forty-eight thousand views and no idea whether a single plate changed. That's the 'counting reach' trap.", "oops");
     } else {
-      const unit = S.act4.outcome === "intent" ? "pp in stated intention" : "pp in millet servings";
+      const unit = S.act4.outcome === "intent" ? "more diners in every 100 saying they'll eat millets" : "more millet lunches in every 100 served";
       $("#pilot").innerHTML = `<div class="panel fade-in"><p class="meta">Your pilot says</p>
-        <div class="headline-num">${fmt(r.measured)}</div><p>${unit}${r.n>1?`, ±${(1.96*r.se).toFixed(1)} (95% CI)`:", in one kitchen with no comparison group"}</p>
+        <div class="headline-num">${fmt(r.measured)}</div><p>${unit}${r.n>1?`, give or take ${(1.96*r.se).toFixed(1)}`:", in one kitchen with no comparison group"}</p>
         <div class="plot-wrap">${pilotPlot(r)}</div>
         <div class="row"><button class="btn" id="sc">Scale it to 400 kitchens</button></div></div>`;
       say(r.measured > 12 ? "Big number! Before you put it in a brief, let's see what happens at scale." : "Here's your pilot number. Now the real test: 400 kitchens, twelve weeks.", "think");
@@ -752,12 +753,12 @@ R.act5 = () => {
   const sc = fmt(r.scale);
   const AUD = [
     {k:"sec",who:"The state secretary",what:"Political and fiscal gain, budget and scheme cycles, farmers",opts:[
-      ["a",`Scaled across the zone, this lifts millet servings by about ${sc} points for the cost of one rate contract. Put it in this budget cycle and FPOs in your districts get a buyer for about ${tonnes} tonnes a year.`,true],
+      ["a",`Scaled across the zone, this takes millet from 4% to about ${shareOf(r.scale)} of lunches for the cost of one rate contract. Put it in this budget cycle and FPOs in your districts get a buyer for about ${tonnes} tonnes a year.`,true],
       ["b",`Our pilot shows millets can transform India's diets and help fight climate change.`,false],
       ["c",`The treatment effect was significant at the 5% level with standard errors clustered by kitchen.`,false]]},
     {k:"sci",who:"A peer scientist",what:"Transparent methods, credibility, limits",opts:[
       ["a",`A huge jump in millet love. Kitchens told us it worked really well!`,false],
-      ["b",`${S.act4.design==="stepped"?"Stepped-wedge":S.act4.design==="rct"?"Cluster-randomised":"Pilot"} across ${r.n>1?"40 kitchens":"one kitchen"}, measured ${fmt(est)} pp; we'd expect about ${sc} pp at scale, and servings aren't intake.`,true],
+      ["b",`${S.act4.design==="stepped"?"Stepped-wedge":S.act4.design==="rct"?"Cluster-randomised":"Pilot"} across ${r.n>1?"40 kitchens":"one kitchen"}, measured ${fmt(est)} percentage points; we'd expect about ${sc} at scale, and servings aren't intake.`,true],
       ["c",`Consistent with the literature, defaults raise uptake by around 80%.`,false]]},
     {k:"firm",who:"A company sourcing head",what:"Demand, cost, competitors, sourcing risk",opts:[
       ["a",`Millets are the future. Get on board or get left behind.`,false],
@@ -772,7 +773,7 @@ R.act5 = () => {
   stage.innerHTML = `
     <p class="act-tag">Act 5 of 5, about 5 minutes</p>
     <h2>Make the case three ways</h2>
-    <div class="brief"><p>Your pilot measured <b>${r.reach?"reach, not servings":fmt(est)+" pp"}</b>. Expected at scale: <b>${sc} pp</b> in millet servings. Pick the line you'd actually say to each person.</p></div>
+    <div class="brief"><p>Your pilot found <b>${r.reach ? "only views, not what anyone ate" : S.act4.outcome === "intent" ? `${fmt(est)} more diners in every 100 saying they'd eat millets` : `${fmt(est)} more millet lunches in every 100 served`}</b>. At scale, expect millet to go from 4% to about <b>${shareOf(r.scale)}</b> of lunches. Pick the line you'd actually say to each person.</p></div>
     ${all.map(a=>`<div class="aud" data-k="${a.k}"><h3>${a.who}</h3><p class="meta">${a.what}</p>
       ${a.opts.map(([v,t])=>`<label class="opt" data-v="${v}"><input type="radio" name="${a.k}" value="${v}" ${S.act5[a.k]===v?"checked":""}><span>${esc(t)}</span></label>`).join("")}<div class="w"></div></div>`).join("")}
     <div class="row"><button class="btn" id="check" disabled>Check my lines</button><button class="btn ghost" id="cont" hidden>See how you did</button></div>`;
@@ -833,7 +834,7 @@ R.debrief = () => {
     <ul class="checklist">${CL.map(([ok,t])=>`<li class="${ok?"ok":""}">${t}</li>`).join("")}</ul>
     <h3>What was true in this world</h3>
     <p>The planner wasn't short of information, and neither were diners. Flour didn't arrive, a ₹8/kg gap sat in a frozen budget, planners didn't think they were allowed to change the menu, and cooks couldn't make millet mains for 800 at speed. A default only held when all three were fixed. Counter tweaks added a point or two and faded by week twelve. Posters and influencers did roughly nothing.</p>
-    ${r ? `<p>Your plan moved servings by about <b>${fmt(r.scale)} pp</b> at scale, from a 4% baseline, against a best achievable of about ${fmt(BEST*.8)} pp. ${r.reach ? "Your pilot couldn't tell you that, because it counted views." : `Your pilot said ${fmt(r.measured)}.`}</p>` : ""}
+    ${r ? `<p>At scale, your plan took millet from 4% to about <b>${shareOf(r.scale)}</b> of lunches. The best possible plan reaches about ${shareOf(BEST*.8)}. ${r.reach ? "Your pilot couldn't tell you that, because it counted views." : `Your pilot had said ${fmt(r.measured)} ${a.outcome === "intent" ? "more diners in every 100 saying they'd eat millets" : "more millet lunches in every 100"}.`}</p>` : ""}
     <p class="meta">Keep reading: Hallsworth 2023 for the overview, Michie, van Stralen and West 2011 for COM-B, DellaVigna and Linos 2022 for why effects shrink.</p>
     <div class="row"><button class="btn" id="again">Play again with a new world</button></div>`;
   requestAnimationFrame(()=>requestAnimationFrame(()=>$$(".brk .fill").forEach(f=>f.style.width=f.dataset.w+"%")));

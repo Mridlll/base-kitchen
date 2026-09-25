@@ -45,7 +45,7 @@ const CARDS = [
 const FC = [
   {id:"f1",title:"Defaults at Danish conferences",min:0,max:100,unit:"%",truth:87,d:0},
   {id:"f2",title:"Influencers and children's snacks",min:-100,max:500,unit:" kcal",truth:0,d:0},
-  {id:"f3",title:"Journals versus nudge units",min:0,max:10,unit:" pp",truth:1.4,d:1},
+  {id:"f3",title:"Journals versus nudge units",min:0,max:10,unit:" more per 100",truth:1.4,d:1},
   {id:"f4",title:"Chile's 2016 food law",min:-50,max:0,unit:"%",truth:-23.7,d:1}
 ];
 const LEVERS = [
@@ -411,7 +411,7 @@ const VIEWS = {
     return head("Act 3: spend the budget", answered(m))
       + `<div class="pane-b"><div class="cols two">
         <div class="cell"><h3>Levers picked</h3><div class="lgd"><span><i style="background:var(--forest)"></i>fixes a real bottleneck</span><span><i style="background:var(--sprout)"></i>counter tweak</span><span><i style="background:var(--paper)"></i>information or restriction</span></div><div class="grow">${svg}</div></div>
-        <div class="cell"><h3>Effect at scale</h3><p class="meta">Millet servings, pp. One dot per player. Line = best possible plan.</p><div class="grow">${dotplot(eff, 0, 16, BEST_SCALE, "best plan")}</div></div>
+        <div class="cell"><h3>Effect at scale</h3><p class="meta">Extra millet lunches in every 100 served. One dot per player. Line = best possible plan.</p><div class="grow">${dotplot(eff, 0, 16, BEST_SCALE, "best plan")}</div></div>
       </div></div>`;
   },
 
@@ -546,8 +546,8 @@ function scatter(pts){
   }
   s += `<line x1="${X(lo)}" y1="${Y(lo)}" x2="${X(hi)}" y2="${Y(hi)}" stroke="var(--ink)" stroke-width="2.5" stroke-dasharray="8 6"/>
     <text x="${X(hi) - 6}" y="${Y(hi) + 22}" font-size="16" text-anchor="end" fill="var(--ink)">pilot = scale</text>
-    <text x="${(L + W - R) / 2}" y="${H - 6}" font-size="17" text-anchor="middle" fill="var(--ink)">Effect at scale, pp</text>
-    <text x="16" y="${(T + H - B) / 2}" font-size="17" text-anchor="middle" fill="var(--ink)" transform="rotate(-90 16 ${(T + H - B) / 2})">Pilot said, pp</text>`;
+    <text x="${(L + W - R) / 2}" y="${H - 6}" font-size="17" text-anchor="middle" fill="var(--ink)">At scale: extra millet lunches per 100</text>
+    <text x="16" y="${(T + H - B) / 2}" font-size="17" text-anchor="middle" fill="var(--ink)" transform="rotate(-90 16 ${(T + H - B) / 2})">Pilot said: extra per 100</text>`;
   const fillOf = d => (DESIGNS.find(x => x[0] === d) || DESIGNS[1])[2];
   pts.forEach(p => s += `<circle cx="${X(+p.scale)}" cy="${Y(+p.measured)}" r="9" fill="${fillOf(p.design)}" stroke="var(--ink)" stroke-width="1.6" opacity=".92"/>`);
   return s + `</svg>`;

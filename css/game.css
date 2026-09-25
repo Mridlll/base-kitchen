@@ -132,6 +132,7 @@ input[type=range]{width:100%;accent-color:var(--leaf);height:28px}
 .lever:hover{border-color:var(--leaf)}
 .lever[aria-pressed="true"]{border-color:var(--ink);background:var(--mist);box-shadow:4px 4px 0 var(--ink);transform:translateY(-2px)}
 .lever b{font-family:var(--display);font-size:18px;line-height:1.15}
+.lever .ldesc{font-size:14px;line-height:1.4;color:var(--muted)}
 .lever .tags{display:flex;flex-wrap:wrap;gap:4px}
 .tagp{font-size:12px;border:1.5px solid var(--leaf);color:var(--forest);border-radius:999px;padding:0 8px}
 .lever .cost{font-family:var(--display);font-weight:700;margin-top:auto}
