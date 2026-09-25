@@ -1,0 +1,16 @@
+/* Live session additions for the player page. Uses the tokens from game.css. */
+
+.live-dot{flex-shrink:0;width:14px;height:14px;border-radius:50%;border:2.5px solid var(--muted);background:transparent;transition:background .2s,border-color .2s}
+.live-dot.on{background:var(--leaf);border-color:var(--leaf);box-shadow:0 0 0 4px var(--mist)}
+.lv-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+.lv-form{max-width:520px}
+.lv-label{display:block;font-family:var(--display);font-weight:700;font-size:19px;margin:6px 0 6px}
+.lv-label span{font-family:var(--body);font-weight:400;font-size:14px;color:var(--muted)}
+.lv-input{font:inherit;color:var(--ink);background:var(--paper);border:2px solid var(--ink);border-radius:14px;padding:8px 14px;width:100%;min-width:0}
+.lv-input:focus-visible{outline:3px solid var(--leaf);outline-offset:2px}
+.lv-code{font-family:var(--display);font-weight:800;font-size:34px;letter-spacing:.3em;text-transform:uppercase;max-width:220px;padding:4px 14px 0;margin-bottom:14px}
+.lv-namerow{display:flex;gap:8px;align-items:center}
+.lv-namerow .btn{flex-shrink:0;font-size:15px;padding:6px 14px 4px}
+.lv-err{min-height:1.5em;margin:10px 0 0;font-weight:700;color:var(--forest)}
+.lv-err:empty{min-height:0;margin:0}

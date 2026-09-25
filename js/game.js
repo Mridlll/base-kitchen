@@ -13,6 +13,10 @@ const fmt = (x, d = 1) => (x >= 0 ? "+" : "−") + Math.abs(x).toFixed(d);
 const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
 const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 
+/* ---------- live session hooks (js/live.js; no-ops in solo) ---------- */
+const live = () => (window.BKLive && window.BKLive.active) ? window.BKLive : null;
+const logEv = (section, kind, payload) => { const L = live(); if (L) L.log(section, kind, payload); };
+
 /* ---------- state ---------- */
 const SCREENS = ["intro","act1","act2","forecast","act3","pubbias","act4","darkpat","act5","debrief"];
 const KATORI_OF = {act1:0, act2:1, act3:2, act4:3, act5:4};
@@ -30,6 +34,7 @@ function setScore(k, v){
   S.score[k] = Math.round(v*10)/10;
   const el = $("#scoreNum"); el.textContent = Math.round(total());
   const chip = el.parentElement; chip.classList.remove("bump"); void chip.offsetWidth; chip.classList.add("bump");
+  const L = live(); if (L) L.score(k, S.score[k]);
 }
 
 /* ---------- thali progress ---------- */
@@ -116,7 +121,9 @@ const GREET = {
 /* ---------- navigation ---------- */
 const stage = $("#stage");
 function go(i){
+  const L = live(); if (L && !L.allow(i)) return;
   S.screen = i; hintIdx = 0; render();
+  if (L) L.entered(i);
   window.scrollTo({top:0, behavior: reduced ? "auto" : "smooth"});
   stage.focus({preventScroll:true});
 }
@@ -211,6 +218,7 @@ R.act1 = () => {
       $(".why-slot", gEl).innerHTML = `<p class="why">${g.why}</p>`;
     });
     setScore("act1", right * 3); complete("act1");
+    logEv("act1", "spec", {...S.act1, right});
     $("#check").hidden = true; $("#cont").hidden = false;
     if (right >= 4){ say(`${right} of 5. That's a behaviour you could actually design for. The planner is our actor from here on.`, "happy"); confetti(); }
     else say(`${right} of 5. Have a look at the notes under each row. From here on, we'll use the green version: the planner serving a millet default.`, "oops");
@@ -273,6 +281,7 @@ R.act2 = () => {
     S.act2Checked = true; draw();
     const right = CARDS.filter(c => S.act2[c.id] === c.a).length;
     setScore("act2", right * 2); complete("act2");
+    logEv("act2", "placements", {...S.act2, right});
     const misses = CARDS.filter(c => S.act2[c.id] !== c.a);
     $("#a2out").innerHTML = `
       <div class="panel fade-in">
@@ -322,6 +331,7 @@ R.forecast = () => {
     $(".rev", box).onclick = () => {
       if (S.fcRevealed[f.id]) return;
       const g = +sl.value; S.forecast[f.id] = g; S.fcRevealed[f.id] = true; sl.disabled = true;
+      logEv("forecast", "forecast", {item:f.id, guess:g, truth:f.truth});
       const pct = x => ((x - f.min) / (f.max - f.min)) * 100;
       const pts = 2.5 * Math.max(0, 1 - Math.abs(g - f.truth) / f.tol);
       $(".res", box).innerHTML = `
@@ -404,6 +414,7 @@ R.act3 = () => {
     let sc = 15 * Math.min(1, e / BEST);
     if (S.levers.has("ban")) sc -= 5;
     setScore("act3", clamp(sc,0,15)); complete("act3");
+    logEv("act3", "levers", {levers:[...S.levers], spent:spent(), effect_scale:trueEffect(S.levers, true)*.8});
     const h = k => S.levers.has(k);
     const items = [
       [h("contract"), "Supply and price gap (physical opportunity)"],
@@ -468,6 +479,8 @@ R.pubbias = () => {
   $("#run").onclick = () => {
     const from = S.pb.runs.length, s = se();
     for (let i=0;i<20;i++){ const est = randn()*s; S.pb.runs.push({est, pub: est/s > 1.96}); }
+    const batch = S.pb.runs.slice(from);
+    logEv("pubbias", "pb_run", {n:S.pb.n, estimates:batch.map(r=>r.est), published:batch.map(r=>r.pub)});
     drawAll(from);
     if (S.pb.runs.length >= 20 && !S.pb.answered) askQ();
     const pub = S.pb.runs.slice(from).filter(r=>r.pub);
@@ -482,6 +495,7 @@ R.pubbias = () => {
       if (S.pb.answered) return; S.pb.answered = inp.value;
       $$("#pbq .opt").forEach(o => { if (o.dataset.v==="b") o.classList.add("right"); else if (o.dataset.v===inp.value) o.classList.add("wrong"); });
       $$('input[name="pbq"]').forEach(x=>x.disabled=true);
+      logEv("pubbias", "pb_answer", {answer:inp.value});
       const ok = inp.value === "b"; setScore("pubbias", ok?5:2);
       $("#pbwhy").innerHTML = `<p class="why">Selective publication plus small samples manufactures effects. Mertens et al. (2022) found an average d of 0.45 across choice architecture studies; after Maier et al. (2022) corrected for publication bias, no evidence of an average effect remained. Notice too that bigger samples publish fewer false positives, and the ones they do publish are smaller.</p>`;
       $("#cont").disabled = false;
@@ -545,6 +559,7 @@ R.act4 = () => {
   $("#run").disabled = !ready();
   $("#run").onclick = () => {
     S.act4Run = runPilot(); $("#run").hidden = true;
+    { const r = S.act4Run; logEv("act4", "pilot", {...S.act4, measured:r.reach?null:r.measured, se:r.se ?? null, scale:r.scale, comps:r.comps}); }
     $$(".chip").forEach(c => c.disabled = true);
     showPilot();
   };
@@ -656,6 +671,7 @@ R.darkpat = () => {
     S.darkChecked = true; S.darkSel = null; draw();
     const right = DP.filter(d => S.dark[d.id] === d.a).length;
     setScore("darkpat", right * 1.5);
+    logEv("darkpat", "labels", {...S.dark, right});
     $("#check").hidden = true; $("#cont").hidden = false;
     if (right >= 5){ say(`${right} of 6. You can spot the difference between steering and tricking.`, "happy"); confetti(); }
     else say(`${right} of 6. The test: does it keep every option at the same cost, and does it serve the user?`, "oops");
@@ -715,6 +731,7 @@ R.act5 = () => {
       $(".w", box).innerHTML = `<p class="why">${WHY[a.k]}</p>`;
     });
     setScore("act5", pts); complete("act5");
+    logEv("act5", "pitch", {...S.act5, points:pts});
     $("#check").hidden = true; $("#cont").hidden = false;
     if (pts >= 9){ say("Same finding, three messengers' worth of framing, and nobody got tricked. Lovely.", "happy"); confetti(); }
     else say("Remember that stakeholders are behaving people too. Diagnose what each one needs before you draft.", "oops");
@@ -740,6 +757,7 @@ R.debrief = () => {
     [!h("ban") && S.act5.tt === "b","Ran the transparency test"]
   ];
   const r = S.act4Run;
+  logEv("debrief", "final", {total:t, by_section:{...S.score}});
   stage.innerHTML = `
     <p class="act-tag">Debrief</p>
     <h2>${tier}</h2>
@@ -763,5 +781,16 @@ R.debrief = () => {
 };
 
 /* ---------- boot ---------- */
-render();
+// js/live.js, when present, decides between the join screen, a resumed live game and solo.
+const api = {
+  SCREENS, reduced, go, render, say, total,
+  state: () => S,
+  load(o){
+    fresh();
+    Object.assign(S, o, {done:new Set(o.done || []), levers:new Set(o.levers || [])});
+    $("#scoreNum").textContent = Math.round(total());
+  }
+};
+if (window.BKLive) { try { window.BKLive.boot(api); } catch (e) { console.error(e); render(); } }
+else render();
 })();

@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Base Kitchen Host</title>
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/game.css">
+<link rel="stylesheet" href="css/live.css">
+<link rel="stylesheet" href="css/host.css">
+<script>
+  // Apply the saved theme before first paint so the projector doesn't flash.
+  try { const t = localStorage.getItem("bk-host-theme"); if (t) document.documentElement.dataset.theme = t; } catch {}
+</script>
+</head>
+<body class="host">
+<div class="h-app" id="app">
+  <header class="h-head" id="head">
+    <div class="mark">Base Kitchen<small>Facilitator view</small></div>
+    <div class="h-headroom" id="headRoom"></div>
+    <div class="h-tools">
+      <button class="btn ghost h-small" id="themeBtn" type="button">Dark mode</button>
+    </div>
+  </header>
+  <main class="h-main" id="main" tabindex="-1"></main>
+</div>
+<p class="h-toast" id="toast" role="status" aria-live="polite"></p>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.1/dist/umd/supabase.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="js/config.js"></script>
+<script src="js/host.js"></script>
+</body>
+</html>
