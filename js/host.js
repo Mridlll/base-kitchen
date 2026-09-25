@@ -293,7 +293,7 @@ function drawPace(){
   const on = new Array(10).fill(0), waiting = new Array(10).fill(0);
   players.forEach(p => { const s = clamp(p.screen | 0, 0, 9); on[s]++; if (p.waiting && s < 9) waiting[s + 1]++; });
   $("#pace").innerHTML = STEPS.map(([k, lab], i) => {
-    const cls = i < room.max_screen ? "open" : i === room.max_screen ? "gate" : "locked";
+    const cls = i < room.max_screen ? "open" : i === room.max_screen ? "limit" : "locked";
     return `<button type="button" class="step ${cls}" data-i="${i}" aria-pressed="${i === room.max_screen}" aria-label="${lab}: ${on[i]} players here${waiting[i] ? `, ${waiting[i]} waiting` : ""}. ${i <= room.max_screen ? "Open" : "Locked"}.">
       <span class="n">${on[i]}</span><span class="lab">${lab}</span><span class="wait">${waiting[i] ? `${waiting[i]} waiting` : i === room.max_screen && i < 9 ? "stop here" : ""}</span></button>`;
   }).join("");
@@ -376,11 +376,12 @@ const VIEWS = {
       h += `<div class="rl ${worst.has(c.id) ? "miss" : ""}" style="padding-left:8px"><b>${esc(c.src)}${worst.has(c.id) ? ` <span class="tagp hot">most misplaced</span>` : ""}</b><span>${esc(c.t)}</span></div>`;
       BOXES.forEach(([k]) => {
         const s = all.filter(p => p[c.id] === k).length / n;
-        h += `<div class="c ${k === c.a ? "right" : ""}" style="background:color-mix(in srgb, var(--leaf) ${Math.round(s * 100)}%, var(--paper));color:${s > .55 ? "var(--on-ink)" : "var(--ink)"}" title="${esc(c.src)} in ${k}: ${pct(s)}">${s ? pct(s) : ""}</div>`;
+        const [bg, fg] = heatStep(s);
+        h += `<div class="c ${k === c.a ? "right" : ""}" style="background:${bg};color:${fg}" title="${esc(c.src)} in ${k}: ${pct(s)}">${s ? pct(s) : ""}</div>`;
       });
       h += `<div class="acc">${pct(acc[i])}</div>`;
     });
-    return head("Act 2: diagnose the planner", `${answered(m)}. Cell shade = share of the room. Outlined cell = the right box.`) + `<div class="pane-b">${h}</div></div>`;
+    return head("Act 2: diagnose the planner", `${answered(m)}. Darker = more of the room put it there. Outlined cell = the right box.`) + `<div class="pane-b">${h}</div></div>`;
   },
 
   forecast(){
@@ -485,12 +486,20 @@ const VIEWS = {
     return head("Act 5: make the case three ways", `${answered(m)}. Share of the room picking each line; the right one is ticked.`)
       + `<div class="pane-b"><div class="cols grid4">${AUD.map(a => `<div class="cell"><h3>${a.who}</h3>${Object.entries(a.opts).map(([v, t]) => {
         const s = all.filter(p => p[a.k] === v).length / n, ok = v === a.right;
-        return `<div class="hbar" style="grid-template-columns:minmax(0,1.5fr) minmax(0,1fr) 64px;margin:10px 0"><span class="lab" style="font-size:17px;${ok ? "font-weight:700" : ""}">${ok ? "✓ " : ""}${esc(t)}</span><div class="track"><div class="fill ${ok ? "leaf" : "ink"}" style="width:${s * 100}%;${ok ? "" : "opacity:.55"}"></div></div><span class="val">${pct(s)}</span></div>`;
+        return `<div class="hbar" style="grid-template-columns:minmax(0,1.5fr) minmax(0,1fr) 64px;margin:10px 0"><span class="lab" style="font-size:17px;${ok ? "font-weight:700" : ""}">${ok ? "✓ " : ""}${esc(t)}</span><div class="track"><div class="fill leaf" style="width:${s * 100}%;${ok ? "" : "background:var(--sprout)"}"></div></div><span class="val">${pct(s)}</span></div>`;
       }).join("")}</div>`).join("")}</div></div>`;
   }
 };
 
 /* ---------- chart helpers (hand-rolled SVG, palette tokens only) ---------- */
+// Share of the room -> fill, in fixed palette steps rather than blended greens.
+function heatStep(s){
+  if (!s) return ["transparent", "var(--ink)"];
+  if (s < .25) return ["var(--mist)", "var(--ink)"];
+  if (s < .5) return ["var(--sprout)", "var(--ink)"];
+  if (s < .75) return ["var(--leaf)", "var(--on-ink)"];
+  return ["var(--forest)", "var(--on-ink)"];
+}
 function hist(vals, f, shown){
   const W = 700, H = 250, L = 16, R = 16, T = 22, B = 34, bins = 20;
   const X = v => L + (v - f.min) / (f.max - f.min) * (W - L - R);

@@ -38,8 +38,8 @@ body.in-room .h-app{height:100vh;min-height:0}
 .step .lab{font-weight:700;font-size:15px;line-height:1.15}
 .step .wait{font-size:13px;color:var(--muted);min-height:1.2em}
 .step.open{background:var(--mist)}
-.step.gate{background:var(--ink);color:var(--on-ink);border-color:var(--ink)}
-.step.gate .wait{color:var(--on-ink)}
+.step.limit{background:var(--ink);color:var(--on-ink);border-color:var(--ink)}
+.step.limit .wait{color:var(--on-ink)}
 .step.locked{border-style:dashed;border-color:var(--muted);color:var(--muted)}
 .pace-note{font-size:15px;color:var(--muted);margin:-4px 0 0}
 
