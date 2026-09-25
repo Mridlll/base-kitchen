@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Base Kitchen: a behavioural science capstone</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/game.css">
+</head>
+<body>
+
+<header class="top">
+  <div class="top-inner">
+    <div class="mark">Base Kitchen<small>SFS behavioural science capstone</small></div>
+    <div class="thali" aria-label="Progress through the five acts">
+      <svg viewBox="0 0 260 50" role="img" aria-hidden="true">
+        <g id="katoris"></g>
+      </svg>
+    </div>
+    <div class="score-chip" aria-live="polite"><span id="scoreNum">0</span></div>
+  </div>
+</header>
+
+<main id="stage" tabindex="-1"></main>
+
+<div class="ragi" id="ragi">
+  <div class="bubble hide" id="bubble" role="status" aria-live="polite">
+    <div class="who">Ragi</div>
+    <div id="bubbleText"></div>
+    <div class="bubble-actions">
+      <button class="mini" id="hintBtn" type="button">Another hint</button>
+      <button class="mini" id="hideBtn" type="button">Hide</button>
+    </div>
+  </div>
+  <button class="ragi-body" id="ragiBody" type="button" aria-label="Ask Ragi for a hint">
+    <svg viewBox="0 0 84 104">
+      <g class="ragi-bob">
+        <!-- stalk & leaves -->
+        <path d="M42 100 C42 86 42 78 42 70" stroke="var(--forest)" stroke-width="5" stroke-linecap="round" fill="none"/>
+        <path d="M42 88 C30 86 22 78 20 70 C31 72 39 78 42 88Z" fill="var(--leaf)"/>
+        <path d="M42 82 C54 80 62 72 64 64 C53 66 45 72 42 82Z" fill="var(--leaf)"/>
+        <!-- finger millet fingers -->
+        <path d="M30 22 C24 12 22 6 24 2" stroke="var(--forest)" stroke-width="7" stroke-linecap="round" fill="none"/>
+        <path d="M42 18 C42 10 42 5 42 1" stroke="var(--forest)" stroke-width="7" stroke-linecap="round" fill="none"/>
+        <path d="M54 22 C60 12 62 6 60 2" stroke="var(--forest)" stroke-width="7" stroke-linecap="round" fill="none"/>
+        <!-- head -->
+        <ellipse cx="42" cy="46" rx="26" ry="28" fill="var(--leaf)" stroke="var(--ink)" stroke-width="2.5"/>
+        <circle cx="30" cy="30" r="2" fill="var(--sprout)"/><circle cx="54" cy="31" r="2" fill="var(--sprout)"/>
+        <circle cx="37" cy="24" r="1.6" fill="var(--sprout)"/><circle cx="48" cy="24" r="1.6" fill="var(--sprout)"/>
+        <!-- face -->
+        <ellipse class="eye" cx="33" cy="45" rx="3.6" ry="4.6" fill="#000"/>
+        <ellipse class="eye" cx="51" cy="45" rx="3.6" ry="4.6" fill="#000"/>
+        <circle cx="34.2" cy="43.4" r="1.2" fill="#fff"/><circle cx="52.2" cy="43.4" r="1.2" fill="#fff"/>
+        <ellipse cx="26" cy="54" rx="4.5" ry="2.6" fill="var(--sprout)" opacity=".9"/>
+        <ellipse cx="58" cy="54" rx="4.5" ry="2.6" fill="var(--sprout)" opacity=".9"/>
+        <path class="mouth-idle" d="M37 55 Q42 59 47 55" stroke="#000" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+        <path class="mouth-happy" d="M35 54 Q42 63 49 54 Z" fill="#000"/>
+        <path class="mouth-oops" d="M37 58 Q42 54 47 58" stroke="#000" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+      </g>
+    </svg>
+  </button>
+</div>
+
+<script src="js/game.js"></script>
+</body>
+</html>
