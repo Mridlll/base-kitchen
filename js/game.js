@@ -159,7 +159,7 @@ function earlier(){
 function addBackLink(){
   const list = earlier(); if (!list.length) return;
   const last = list[list.length - 1], b = document.createElement("button");
-  b.type = "button"; b.className = "back-link"; b.textContent = `← Look back at ${PAGE_NAMES[SCREENS[last]]}`;
+  b.type = "button"; b.className = "back-link"; b.textContent = `← See ${PAGE_NAMES[SCREENS[last]]} again`;
   b.onclick = () => openLookback(last);
   stage.prepend(b);
 }
@@ -173,11 +173,11 @@ function openLookback(i){
     document.addEventListener("keydown", lbKey);
   }
   lb.innerHTML = `
-    <div class="lb-bar"><span class="lb-what">Looking back at <b>${PAGE_NAMES[SCREENS[i]]}</b></span>
+    <div class="lb-bar"><span class="lb-what"><b>${PAGE_NAMES[SCREENS[i]][0].toUpperCase() + PAGE_NAMES[SCREENS[i]].slice(1)}</b> (read only)</span>
       <span class="lb-nav">
-        <button class="btn ghost" type="button" data-to="${k > 0 ? list[k-1] : ""}" ${k > 0 ? "" : "disabled"}>← Earlier</button>
-        <button class="btn ghost" type="button" data-to="${k < list.length-1 ? list[k+1] : ""}" ${k < list.length-1 ? "" : "disabled"}>Later →</button>
-        <button class="btn" type="button" data-done>Back to where I was</button>
+        <button class="btn ghost" type="button" data-to="${k > 0 ? list[k-1] : ""}" ${k > 0 ? "" : "disabled"}>← Prev</button>
+        <button class="btn ghost" type="button" data-to="${k < list.length-1 ? list[k+1] : ""}" ${k < list.length-1 ? "" : "disabled"}>Next →</button>
+        <button class="btn" type="button" data-done>Close</button>
       </span></div>
     <div class="lb-page" inert>${pages[i]}</div>`;
   $$("[data-to]", lb).forEach(b => b.onclick = () => openLookback(+b.dataset.to));

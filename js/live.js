@@ -71,9 +71,9 @@ function choose(){
   paint(`
     <p class="act-tag">SFS learning deep dive, capstone</p>
     <h1>Base Kitchen</h1>
-    <p class="lede">Playing along with a facilitator, or on your own?</p>
+    <p class="lede">Got a room code? Join the session. No code? Play solo.</p>
     <div class="row"><button class="btn" id="lvJoin" type="button">Join a session</button><button class="btn ghost" id="lvSolo" type="button">Play solo</button></div>`);
-  G.say("Hello! I'm Ragi. If your facilitator gave you a room code, join the session. Otherwise, play solo.", "idle");
+  G.say("Hi, I'm Ragi. Pick one to start.", "idle");
   $("#lvJoin").onclick = () => join("");
   $("#lvSolo").onclick = solo;
 }
@@ -86,12 +86,12 @@ function solo(){
 function join(prefill, err){
   paint(`
     <p class="act-tag">Live session</p>
-    <h2>Join the kitchen</h2>
-    <p>Your facilitator will put a four-letter room code on the screen.</p>
+    <h2>Join the session</h2>
+    <p>Enter the code shown on the big screen.</p>
     <form id="lvForm" class="panel lv-form" novalidate>
       <label class="lv-label" for="lvCode">Room code</label>
       <input id="lvCode" class="lv-input lv-code" maxlength="4" autocomplete="off" autocapitalize="characters" spellcheck="false" required value="${esc(prefill || "")}" aria-describedby="lvErr">
-      <label class="lv-label" for="lvName">Your name <span>shown on the leaderboard</span></label>
+      <label class="lv-label" for="lvName">Your name <span>(shown on the leaderboard)</span></label>
       <div class="lv-namerow">
         <input id="lvName" class="lv-input" maxlength="24" autocomplete="nickname" required value="${esc(grainName())}">
         <button type="button" class="btn ghost" id="lvShuffle">Another name</button>
@@ -99,7 +99,7 @@ function join(prefill, err){
       <p class="lv-err" id="lvErr" role="alert">${esc(err || "")}</p>
       <div class="row"><button class="btn" id="lvGo" type="submit">Join</button><button class="btn ghost" type="button" id="lvSolo">Play solo instead</button></div>
     </form>`);
-  G.say(prefill ? "Namaste! Your room code is filled in. Keep the grain name or type your own." : "Namaste! Type the room code from the big screen. Keep the grain name or type your own.", "idle");
+  G.say(prefill ? "Code's filled in. Keep the name or change it, then tap Join." : "Type the code, pick a name, tap Join.", "idle");
   const codeIn = $("#lvCode"), nameIn = $("#lvName"), errEl = $("#lvErr"), goBtn = $("#lvGo");
   codeIn.oninput = () => { codeIn.value = codeIn.value.toUpperCase().replace(/[^A-Z0-9]/g, ""); };
   $("#lvShuffle").onclick = () => { nameIn.value = grainName(); };
@@ -108,13 +108,13 @@ function join(prefill, err){
   $("#lvForm").onsubmit = async e => {
     e.preventDefault();
     const c = codeIn.value.trim().toUpperCase(), name = nameIn.value.trim().replace(/\s+/g, " ");
-    if (!CODE_RE.test(c)){ errEl.textContent = "Room codes are four letters or numbers, like KX7P."; codeIn.focus(); return; }
-    if (!name){ errEl.textContent = "Pick a name, or tap Another name."; nameIn.focus(); return; }
+    if (!CODE_RE.test(c)){ errEl.textContent = "Codes are 4 characters, like KX7P."; codeIn.focus(); return; }
+    if (!name){ errEl.textContent = "Add a name."; nameIn.focus(); return; }
     errEl.textContent = ""; goBtn.disabled = true; goBtn.textContent = "Joining…";
     try {
       await session();
       const r = await fetchRoom(c);
-      if (!r) throw new Error("There's no session with that code. Check the screen and try again.");
+      if (!r) throw new Error("No room with that code.");
       if (r.status === "closed") throw new Error("That session has already ended.");
       const { error } = await sb.from("players").upsert(
         {id:uid, room_code:c, display_name:name, screen:0, waiting:false, total:0, updated_at:new Date().toISOString()},
@@ -124,7 +124,7 @@ function join(prefill, err){
       start(r, null);
     } catch (ex) {
       console.error(ex);
-      errEl.textContent = ex && ex.message && !/fetch|network/i.test(ex.message) ? ex.message : "Couldn't reach the session. Check your connection, or play solo.";
+      errEl.textContent = ex && ex.message && !/fetch|network/i.test(ex.message) ? ex.message : "Can't connect. Check your internet, or play solo.";
       goBtn.disabled = false; goBtn.textContent = "Join";
     }
   };
@@ -138,13 +138,13 @@ async function fetchRoom(c){
 
 // Opened with ?room=CODE: pick up where this browser left off, or ask to join.
 async function resume(c){
-  if (!CODE_RE.test(c)) return join("", "That link's room code doesn't look right. Type the code from the screen.");
+  if (!CODE_RE.test(c)) return join("", "That link's code looks wrong. Type the code from the screen.");
   let s = null;
   try {
     await session();
     code = c; s = store.get(snapKey());
     const r = await fetchRoom(c);
-    if (!r) return join("", "There's no session with that code.");
+    if (!r) return join("", "No room with that code.");
     if (r.status === "closed") return join("", "That session has already ended.");
     const { data: me } = await sb.from("players").select("room_code").eq("id", uid).maybeSingle();
     if (me && me.room_code === c) return start(r, s && s.S);
@@ -152,7 +152,7 @@ async function resume(c){
   } catch (e) {
     console.error(e);
     if (uid && s && s.room) return start(s.room, s.S);   // offline refresh: carry on from this browser's copy
-    return join(c, "Couldn't reach the session right now. Try again, or play solo.");
+    return join(c, "Can't connect. Try again, or play solo.");
   }
 }
 
@@ -197,7 +197,7 @@ function onRoom(r){
   const s = store.get(snapKey()); if (s){ s.room = room; store.set(snapKey(), s); }
   if (room.status === "closed" && !closed){
     closed = true; setDot();
-    G.say("Your facilitator has closed this session. Carry on if you like; nothing more is being recorded.", "think");
+    G.say("This room is closed. You can keep playing, but nothing is saved now.", "think");
   }
   if (pendingScreen !== null && (closed || pendingScreen <= room.max_screen)){
     const i = pendingScreen; pendingScreen = null; G.go(i);
@@ -212,10 +212,10 @@ function allow(i){
   const name = TITLES[G.SCREENS[i]] || "the next part";
   paint(`
     <p class="act-tag">Live session</p>
-    <h2>Hold on a moment</h2>
-    <div class="brief"><p>Next up is <b>${esc(name)}</b>. Your facilitator will open it for everyone together. This page moves on by itself, so there's no need to refresh.</p></div>
-    <p class="meta">Your score so far: <b>${Math.round(G.total())}</b></p>`);
-  G.say("Waiting for your facilitator to open the next act. Good moment for a sip of chai.", "think");
+    <h2>Wait here</h2>
+    <div class="brief"><p>Next: <b>${esc(name)}</b>. It opens when your facilitator is ready. No need to refresh.</p></div>
+    <p class="meta">Score so far: <b>${Math.round(G.total())}</b></p>`);
+  G.say("Waiting for the next act. Chai break?", "think");
   G.addBackLink();
   store.set(pagesKey(), G.pages());
   return false;
@@ -308,7 +308,7 @@ function setDot(ok){
   const d = $("#liveDot"); if (!d) return;
   const on = connected && navigator.onLine && lastOk && !closed;
   d.classList.toggle("on", on);
-  const label = closed ? `Session ${code} closed` : on ? `Live in room ${code}` : `Offline. Your progress is saved and will sync.`;
+  const label = closed ? `Session ${code} closed` : on ? `Live in room ${code}` : `Offline. Progress is saved and will sync.`;
   d.title = label; d.setAttribute("aria-label", label);
   d.innerHTML = `<span class="lv-sr">${esc(label)}</span>`;
 }

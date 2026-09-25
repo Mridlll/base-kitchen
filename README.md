@@ -34,19 +34,20 @@ These steps only need doing once per Supabase project.
 
 ## Running a session
 
-1. Open `host.html`, enter the passcode and click **Open a new room**.
-2. Put it on the projector. Players scan the QR code, or go to the site and type the code.
-3. **Pacing bar:** click a step to let players go that far. Anyone who gets ahead sees a "hold on" card and moves on automatically when you open the next step. The big numbers show how many players are on each screen. "Waiting" counts players held at the gate.
-4. **Panels:** these follow the pacing unless you pick a tab yourself. Click *Follow pacing* to go back to following.
-   - **Act 1:** click *Reveal answers*.
-   - **Forecast:** the true values stay hidden until you click *Reveal the truth*. That's the headline moment.
-   - **Act 4:** the scatter shows each pilot against its effect at scale. Before-and-after pilots float above the diagonal.
-5. **Export CSV** downloads two files: `…-events.csv` and `…-scores.csv`.
-6. **Close room** stops recording. Players can finish playing. Closed rooms stay in the *Rooms* list, where you can replay them for a debrief.
+1. Open `host.html`, enter the passcode, click **Start a room**.
+2. Put it on the projector. Players scan the QR code or type the code.
+3. Click a step on the pacing bar to set how far players can go. Players who get ahead wait, then move on by themselves when you open the next step.
+4. The panel below switches with the pacing. Pick a tab to look at something else; turn **Auto-switch** back on to follow again.
+   - **Act 1:** click **Reveal answers**.
+   - **Forecast:** click **Show answers** for the big moment.
+5. **Export CSV** downloads the events and scores.
+6. **Close room** stops saving. Old rooms stay under **Rooms**.
 
-Players can look back at any page they've finished with the *Look back* link at the top of each screen, including while they're held at the pacing gate. Earlier pages are shown read-only, exactly as they left them, and the host opening the next act moves them on with everyone else.
+For players:
 
-Players who refresh mid-game carry on from the same screen with the same score. The exception is a screen they hadn't finished: that one starts again. If the connection drops, play continues. Writes are queued in the browser and sent on reconnect, and the dot in the top bar shows whether it's live.
+- The **← See … again** link at the top reopens earlier pages, read only.
+- A refresh keeps their place and score. An unfinished screen starts over.
+- If the internet drops, the game keeps going and catches up later. The dot in the top bar shows whether it's connected.
 
 ## Data
 

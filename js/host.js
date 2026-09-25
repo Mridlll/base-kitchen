@@ -126,17 +126,17 @@ async function gate(err){
   const { data: mine } = await sb.from("rooms").select("code,status,created_at").eq("host_id", uid).order("created_at", {ascending:false}).limit(8);
   main.innerHTML = `
     <div class="gate fade-in">
-      <p class="act-tag">For facilitators</p>
-      <h1>Run a live session</h1>
-      <p class="lede">Enter the facilitator passcode to open a new room. Players join on their phones with the room code.</p>
+      <p class="act-tag">Facilitators</p>
+      <h1>Start a session</h1>
+      <p class="lede">Enter the passcode to open a room.</p>
       <form id="gForm" class="panel" novalidate>
-        <label class="lv-label" for="gPass">Facilitator passcode</label>
+        <label class="lv-label" for="gPass">Passcode</label>
         <input id="gPass" class="lv-input" type="password" autocomplete="current-password" required>
         <p class="lv-err" id="gErr" role="alert">${esc(err || "")}</p>
-        <div class="row"><button class="btn" id="gGo" type="submit">Open a new room</button></div>
+        <div class="row"><button class="btn" id="gGo" type="submit">Start a room</button></div>
       </form>
-      ${mine && mine.length ? `<h3>Your rooms on this device</h3>
-      <ul class="rooms">${mine.map(r => `<li><b>${esc(r.code)}</b><span class="h-status ${r.status}">${esc(r.status)}</span><span class="meta">${new Date(r.created_at).toLocaleString()}</span><button class="btn ghost h-small" data-code="${esc(r.code)}" type="button">${r.status === "closed" ? "Replay" : "Reopen"}</button></li>`).join("")}</ul>` : ""}
+      ${mine && mine.length ? `<h3>Earlier rooms</h3>
+      <ul class="rooms">${mine.map(r => `<li><b>${esc(r.code)}</b><span class="h-status ${r.status}">${esc(r.status)}</span><span class="meta">${new Date(r.created_at).toLocaleString()}</span><button class="btn ghost h-small" data-code="${esc(r.code)}" type="button">Open</button></li>`).join("")}</ul>` : ""}
     </div>`;
   $("#gForm").onsubmit = async e => {
     e.preventDefault();
@@ -145,7 +145,7 @@ async function gate(err){
     const { data, error } = await sb.rpc("create_room", {p_passcode: $("#gPass").value});
     if (error){
       errEl.textContent = /passcode/i.test(error.message) ? error.message + "." : `Couldn't open a room: ${error.message}`;
-      b.disabled = false; b.textContent = "Open a new room"; return;
+      b.disabled = false; b.textContent = "Start a room"; return;
     }
     const { data: r } = await sb.from("rooms").select("*").eq("code", data).single();
     openRoom(r);
@@ -165,7 +165,7 @@ async function openRoom(r){
   drawHead();
   main.innerHTML = `
     <div class="pace" id="pace" role="group" aria-label="Pacing: players can go up to the highlighted step"></div>
-    <p class="pace-note">Click a step to let players go that far. Big numbers are players on each screen right now.</p>
+    <p class="pace-note">Click a step to set how far players can go. Numbers = players on each screen.</p>
     <div class="tabs" role="tablist" id="tabs"></div>
     <section class="pane" id="pane" role="tabpanel"></section>`;
   subscribe();
@@ -250,12 +250,12 @@ async function setRoom(patch){
 function closeRoom(){
   const b = $("#closeBtn");
   if (!closeArmed){
-    b.textContent = "Click again to close"; b.classList.remove("ghost");
+    b.textContent = "Click again to confirm"; b.classList.remove("ghost");
     closeArmed = setTimeout(() => { closeArmed = null; b.textContent = "Close room"; b.classList.add("ghost"); }, 4000);
     return;
   }
   clearTimeout(closeArmed); closeArmed = null;
-  setRoom({status:"closed"}).then(() => { b.textContent = "Close room"; b.classList.add("ghost"); b.disabled = true; toast("Room closed. Players can finish, but nothing more is recorded."); });
+  setRoom({status:"closed"}).then(() => { b.textContent = "Close room"; b.classList.add("ghost"); b.disabled = true; toast("Room closed. Nothing more is saved."); });
 }
 
 /* ---------- derived data ---------- */
@@ -295,7 +295,7 @@ function drawPace(){
   $("#pace").innerHTML = STEPS.map(([k, lab], i) => {
     const cls = i < room.max_screen ? "open" : i === room.max_screen ? "limit" : "locked";
     return `<button type="button" class="step ${cls}" data-i="${i}" aria-pressed="${i === room.max_screen}" aria-label="${lab}: ${on[i]} players here${waiting[i] ? `, ${waiting[i]} waiting` : ""}. ${i <= room.max_screen ? "Open" : "Locked"}.">
-      <span class="n">${on[i]}</span><span class="lab">${lab}</span><span class="wait">${waiting[i] ? `${waiting[i]} waiting` : i === room.max_screen && i < 9 ? "stop here" : ""}</span></button>`;
+      <span class="n">${on[i]}</span><span class="lab">${lab}</span><span class="wait">${waiting[i] ? `${waiting[i]} waiting` : i === room.max_screen && i < 9 ? "limit" : ""}</span></button>`;
   }).join("");
   $$("#pace .step").forEach(b => b.onclick = () => {
     if (room.status === "closed") return toast("This room is closed.");
@@ -308,7 +308,7 @@ function drawPace(){
 
 function drawTabs(){
   $("#tabs").innerHTML = PANELS.map(([k, lab]) => `<button type="button" role="tab" class="tab" data-k="${k}" aria-selected="${panel === k}" aria-controls="pane">${lab}</button>`).join("")
-    + `<button type="button" class="tab follow" id="followBtn" aria-pressed="${follow}">${follow ? "Following pacing" : "Follow pacing"}</button>`;
+    + `<button type="button" class="tab follow" id="followBtn" aria-pressed="${follow}">${follow ? "Auto-switch: on" : "Auto-switch: off"}</button>`;
   $$("#tabs .tab[data-k]").forEach(b => b.onclick = () => { panel = b.dataset.k; follow = false; draw(true); });
   $("#followBtn").onclick = () => { follow = !follow; if (follow) panel = panelFor(room.max_screen); draw(true); };
 }
@@ -336,13 +336,13 @@ const VIEWS = {
   lobby(){
     const list = [...players.values()].sort((a, b) => String(a.joined_at).localeCompare(String(b.joined_at)));
     const html = list.map(p => { const isNew = !seenNames.has(p.id) && !reduced; seenNames.add(p.id); return `<span class="name ${isNew ? "new" : ""}">${esc(p.display_name)}</span>`; }).join("");
-    return head("Who's in the kitchen", `${players.size} joined. Scan the code or go to the link above.`)
+    return head("Who's here", `${players.size} joined`)
       + `<div class="pane-b">${list.length ? `<div class="names">${html}</div>` : empty("Waiting for the first player…")}</div>`;
   },
 
   board(){
     const top = [...players.values()].sort((a, b) => (+b.total) - (+a.total) || String(a.joined_at).localeCompare(String(b.joined_at))).slice(0, 10);
-    return head("Leaderboard", "Top 10 by total score, out of 100")
+    return head("Leaderboard", "Top 10, out of 100")
       + `<div class="pane-b">${top.length ? `<ol class="board">${top.map((p, i) => `<li class="brow" data-id="${p.id}"><span class="rk">${i + 1}</span><span class="nm">${esc(p.display_name)}</span><span class="tt">${Math.round(+p.total)}</span></li>`).join("")}</ol>` : empty("No scores yet.")}</div>`;
   },
 
@@ -373,7 +373,7 @@ const VIEWS = {
     let h = `<div class="heat" style="grid-template-columns:${cols};grid-template-rows:auto repeat(${CARDS.length},minmax(0,1fr))"><div></div>`
       + BOXES.map(([, t]) => `<div class="hd">${t}</div>`).join("") + `<div class="hd">Right</div>`;
     CARDS.forEach((c, i) => {
-      h += `<div class="rl ${worst.has(c.id) ? "miss" : ""}" style="padding-left:8px"><b>${esc(c.src)}${worst.has(c.id) ? ` <span class="tagp hot">most misplaced</span>` : ""}</b><span>${esc(c.t)}</span></div>`;
+      h += `<div class="rl ${worst.has(c.id) ? "miss" : ""}" style="padding-left:8px"><b>${esc(c.src)}${worst.has(c.id) ? ` <span class="tagp hot">most missed</span>` : ""}</b><span>${esc(c.t)}</span></div>`;
       BOXES.forEach(([k]) => {
         const s = all.filter(p => p[c.id] === k).length / n;
         const [bg, fg] = heatStep(s);
@@ -381,14 +381,14 @@ const VIEWS = {
       });
       h += `<div class="acc">${pct(acc[i])}</div>`;
     });
-    return head("Act 2: diagnose the planner", `${answered(m)}. Darker = more of the room put it there. Outlined cell = the right box.`) + `<div class="pane-b">${h}</div></div>`;
+    return head("Act 2: diagnose the planner", `${answered(m)}. Darker = more people. Outlined = correct box.`) + `<div class="pane-b">${h}</div></div>`;
   },
 
   forecast(){
     const fc = forecasts(), shown = !!(room.reveal && room.reveal.forecast);
-    const btn = `<button class="btn ${shown ? "ghost" : ""}" type="button" data-action="fcreveal">${shown ? "Hide the truth" : "Reveal the truth"}</button>`;
+    const btn = `<button class="btn ${shown ? "ghost" : ""}" type="button" data-action="fcreveal">${shown ? "Hide answers" : "Show answers"}</button>`;
     const n = Math.max(...FC.map(f => fc[f.id].size));
-    return head("Forecast the evidence", `${n} of ${players.size} forecast. Bars are the room's guesses; the dashed line is the room's median.`, btn)
+    return head("Forecast the evidence", `${n} of ${players.size} answered. Bars = guesses. Dashed line = room median.`, btn)
       + `<div class="pane-b"><div class="cols grid4">${FC.map(f => {
         const vals = [...fc[f.id].values()];
         return `<div class="cell"><h3>${f.title}</h3><div class="grow">${hist(vals, f, shown)}</div></div>`;
@@ -410,8 +410,8 @@ const VIEWS = {
     const eff = all.map(p => +p.effect_scale).filter(Number.isFinite);
     return head("Act 3: spend the budget", answered(m))
       + `<div class="pane-b"><div class="cols two">
-        <div class="cell"><h3>Which levers the room bought</h3><div class="lgd"><span><i style="background:var(--forest)"></i>fixes a diagnosed bottleneck</span><span><i style="background:var(--sprout)"></i>counter tweak</span><span><i style="background:var(--paper)"></i>information or restriction</span></div><div class="grow">${svg}</div></div>
-        <div class="cell"><h3>What the plans would do at scale</h3><p class="meta">Effect on millet servings at scale, pp, one dot per player. The line is the best plan possible.</p><div class="grow">${dotplot(eff, 0, 16, BEST_SCALE, "best plan")}</div></div>
+        <div class="cell"><h3>Levers picked</h3><div class="lgd"><span><i style="background:var(--forest)"></i>fixes a real bottleneck</span><span><i style="background:var(--sprout)"></i>counter tweak</span><span><i style="background:var(--paper)"></i>information or restriction</span></div><div class="grow">${svg}</div></div>
+        <div class="cell"><h3>Effect at scale</h3><p class="meta">Millet servings, pp. One dot per player. Line = best possible plan.</p><div class="grow">${dotplot(eff, 0, 16, BEST_SCALE, "best plan")}</div></div>
       </div></div>`;
   },
 
@@ -437,9 +437,9 @@ const VIEWS = {
     });
     if (mean !== null) h += `<line x1="${X(mean)}" y1="6" x2="${X(mean)}" y2="114" stroke="var(--ink)" stroke-width="4"/><text x="${X(mean) + 8}" y="112" font-size="18" font-weight="700" fill="var(--ink)">published mean ${fmt(mean)}</text>`;
     h += `</svg>`;
-    return head("The publication machine", `Every trial the room ran, pooled. Each one tests a nudge that does nothing.`)
+    return head("The publication machine", `All trials from the room. The true effect is zero.`)
       + `<div class="pane-b" style="display:flex;flex-direction:column">
-        <div class="pb-stats" style="margin:0 0 8px"><div><b>${dots.length}</b>trials run</div><div><b>${pub.length}</b>published</div><div><b>${mean === null ? "–" : fmt(mean)}</b>published average, pp</div><div><b>0.0</b>true effect, pp</div><div><b>${ans.size ? pct(right / ans.size) : "–"}</b>saw the bias (${ans.size} answered)</div></div>
+        <div class="pb-stats" style="margin:0 0 8px"><div><b>${dots.length}</b>trials run</div><div><b>${pub.length}</b>published</div><div><b>${mean === null ? "–" : fmt(mean)}</b>published average, pp</div><div><b>0.0</b>true effect, pp</div><div><b>${ans.size ? pct(right / ans.size) : "–"}</b>got the question (${ans.size} answered)</div></div>
         <div style="flex:1;min-height:0">${dots.length ? h : empty("No trials run yet.")}</div></div>`;
   },
 
@@ -459,8 +459,8 @@ const VIEWS = {
           ${bars("Pre-registered", [["Yes", all.filter(p => p.prereg === "yes").length / n, 0]])}
           ${bars("Twelve-week follow-up", [["Yes", all.filter(p => p.follow === "12w").length / n, 0]])}
         </div>
-        <div class="cell"><h3>Pilot result against what happened at scale</h3>
-          <p class="meta">One dot per player. On the diagonal, the pilot predicted scale. ${reach ? `${reach} measured reach only, so they have no dot.` : ""}</p>
+        <div class="cell"><h3>Pilot vs. at scale</h3>
+          <p class="meta">One dot per player. On the line = the pilot got it right. ${reach ? `${reach} measured reach only (no dot).` : ""}</p>
           <div class="lgd">${DESIGNS.map(d => `<span><i style="background:${d[2]};border-radius:50%"></i>${d[1]}</span>`).join("")}</div>
           <div class="grow">${scatter(pts)}</div></div>
       </div></div>`;
@@ -474,16 +474,16 @@ const VIEWS = {
       const right = all.filter(p => p[id] === a).length / n;
       const wrong = {}; all.forEach(p => { if (p[id] && p[id] !== a) wrong[p[id]] = (wrong[p[id]] || 0) + 1; });
       const top = Object.entries(wrong).sort((x, y) => y[1] - x[1])[0];
-      return `<div class="hbar" style="grid-template-columns:minmax(0,1.4fr) minmax(0,1fr) 80px;margin:12px 0"><span class="lab" style="font-size:19px"><b>${esc(t)}</b><br><span class="meta">It's ${DCAT[a].toLowerCase()}.${top ? ` Most common mistake: ${DCAT[top[0]].toLowerCase()} (${pct(top[1] / n)}).` : ""}</span></span><div class="track" style="height:34px"><div class="fill leaf" style="width:${right * 100}%"></div></div><span class="val" style="font-size:26px">${pct(right)}</span></div>`;
+      return `<div class="hbar" style="grid-template-columns:minmax(0,1.4fr) minmax(0,1fr) 80px;margin:12px 0"><span class="lab" style="font-size:19px"><b>${esc(t)}</b><br><span class="meta">Answer: ${DCAT[a].toLowerCase()}.${top ? ` Common mistake: ${DCAT[top[0]].toLowerCase()} (${pct(top[1] / n)}).` : ""}</span></span><div class="track" style="height:34px"><div class="fill leaf" style="width:${right * 100}%"></div></div><span class="val" style="font-size:26px">${pct(right)}</span></div>`;
     }).join("");
-    return head("Nudge, boost, sludge, or dark pattern?", `${answered(m)}. Share who labelled each part correctly.`) + `<div class="pane-b">${rows}</div>`;
+    return head("Nudge, boost, sludge, or dark pattern?", `${answered(m)}. % who got each one right.`) + `<div class="pane-b">${rows}</div>`;
   },
 
   act5(){
     const m = latest("pitch");
     if (!m.size) return head("Act 5: make the case three ways", answered(m)) + `<div class="pane-b">${empty("No pitches checked yet.")}</div>`;
     const all = [...m.values()], n = all.length;
-    return head("Act 5: make the case three ways", `${answered(m)}. Share of the room picking each line; the right one is ticked.`)
+    return head("Act 5: make the case three ways", `${answered(m)}. ✓ = best line.`)
       + `<div class="pane-b"><div class="cols grid4">${AUD.map(a => `<div class="cell"><h3>${a.who}</h3>${Object.entries(a.opts).map(([v, t]) => {
         const s = all.filter(p => p[a.k] === v).length / n, ok = v === a.right;
         return `<div class="hbar" style="grid-template-columns:minmax(0,1.5fr) minmax(0,1fr) 64px;margin:10px 0"><span class="lab" style="font-size:17px;${ok ? "font-weight:700" : ""}">${ok ? "✓ " : ""}${esc(t)}</span><div class="track"><div class="fill leaf" style="width:${s * 100}%;${ok ? "" : "background:var(--sprout)"}"></div></div><span class="val">${pct(s)}</span></div>`;
