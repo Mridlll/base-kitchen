@@ -99,7 +99,7 @@ const HINTS = {
   act2:["Every box needs evidence, not a hunch. A card with no source is a guess.","Watch the actor. Our target is the menu planner, not the diners.","Reflective motivation includes believing something is allowed. Automatic motivation is habit and routine."],
   forecast:["Defaults tend to be bigger than people expect. Information effects tend to be smaller.","Remember the gap between journal effects and what nudge units see at scale."],
   act3:["Look back at your diagnosis. Which boxes were the real bottlenecks?","A default the planner doesn't feel allowed to set, with flour that doesn't arrive, won't last a week.","Posters speak to System 2. Lunch counters run on System 1."],
-  pubbias:["Try the small sample first, then the big one. Compare what gets into the journal.","Only 'significant' positive results get published here. What does that do to the published average?"],
+  pubbias:["Start with 10 kitchens, then try 160. Which size gets fooled by luck more often?","Only the 'it worked!' studies get printed here. What does that do to the average of what's printed?"],
   act4:["Stated intentions overstate change. What will you actually count?","One enthusiastic kitchen, no comparison group: what else changed that month?","If you don't pre-register, you get to pick the best-looking outcome afterwards. So will a reviewer's suspicion."],
   darkpat:["A nudge keeps every option and roughly the same cost. A dark pattern works against the user's interest.","Sludge is friction on a choice that's good for the person.","A boost builds skill, so it works even after the app is gone."],
   act5:["Secretaries care about budget cycles, farmers and fiscal risk. Scientists care about design and limits. Firms care about demand and competitors.","Would you be comfortable if diners knew exactly what you did? That's the test."],
@@ -111,7 +111,7 @@ const GREET = {
   act2:"Now the detective work. Sort each evidence card into a COM-B box. Tap a card, then tap a box.",
   forecast:"Quick break. Before I show you what real studies found, guess. Nobody's grading your ego, only your calibration.",
   act3:"You've got a budget. Spend it on the bottlenecks you found, not on what feels busiest.",
-  pubbias:"A little machine. Every trial here tests a nudge that truly does nothing. Let's see what gets published.",
+  pubbias:"A little machine. Every study here tests a nudge that does nothing at all. Let's see which ones get published.",
   act4:"Time to test your plan. Every choice here changes what number you'll see, and whether it's true.",
   darkpat:"Same design moves, different intentions. Tap each part of this checkout and tell me what it is.",
   act5:"You've got a result. Now say it three different ways for three different people.",
@@ -499,15 +499,20 @@ R.pubbias = () => {
   stage.innerHTML = `
     <p class="act-tag">Interlude, about 3 minutes</p>
     <h2>The publication machine</h2>
-    <p>Each dot is a trial of a nudge with a <b>true effect of zero</b>. The journal only takes trials that are positive and significant at 5%. Everything else goes in the file drawer. Pick a sample size and run some trials.</p>
+    <p class="lede">Why do so many studies say a nudge works, when often it doesn't?</p>
+    <div class="brief">
+      <p><b>The setup.</b> Lots of teams test the same nudge. In truth it does <b>nothing</b>. But by pure luck, some teams see a small rise and some see a small drop.</p>
+      <p><b>The catch.</b> Journals mostly print exciting results. So the lucky "it worked!" studies get published, and the rest are never seen.</p>
+    </div>
+    <p>Try it. Each dot is one study: the further right, the bigger the rise it found. Pick how many kitchens each study uses, then run 20 studies and watch which ones get published.</p>
     <div class="row" style="margin-top:6px">
-      <span style="font-weight:700">Kitchens per trial</span>
+      <span style="font-weight:700">Kitchens per study</span>
       <div class="seg" id="seg">${[10,40,160].map(n=>`<button type="button" data-n="${n}" aria-pressed="${S.pb.n===n}">${n}</button>`).join("")}</div>
-      <button class="btn" id="run">Run 20 trials</button>
+      <button class="btn" id="run">Run 20 studies</button>
       <button class="btn ghost" id="clear">Clear</button>
     </div>
-    <div class="panel"><div class="plot-wrap"><svg id="pbsvg" viewBox="0 0 640 230" width="100%" role="img" aria-label="Trial estimates, split into published and file drawer"></svg></div>
-      <div class="pb-stats"><div><b id="pbN">0</b>trials run</div><div><b id="pbP">0</b>published</div><div><b id="pbM">–</b>published average, pp</div><div><b>0.0</b>true effect, pp</div></div>
+    <div class="panel"><div class="plot-wrap"><svg id="pbsvg" viewBox="0 0 640 230" width="100%" role="img" aria-label="Study results, split into published and never published"></svg></div>
+      <div class="pb-stats"><div><b id="pbN">0</b>studies run</div><div><b id="pbP">0</b>published</div><div><b id="pbM">–</b>average rise in the published ones</div><div><b>0.0</b>real effect</div></div>
     </div>
     <div id="pbq"></div>
     <div class="row"><button class="btn" id="cont" disabled>Continue to Act 4</button></div>`;
@@ -515,12 +520,12 @@ R.pubbias = () => {
   const X = v => 320 + clamp(v,-14,14) * 21;
   const svg = $("#pbsvg");
   const axes = () => `
-    <text x="8" y="40" font-size="14" font-weight="700" fill="var(--ink)">Journal</text>
-    <text x="8" y="150" font-size="14" font-weight="700" fill="var(--ink)">File drawer</text>
+    <text x="8" y="40" font-size="19" font-weight="700" fill="var(--ink)">Published</text>
+    <text x="8" y="150" font-size="19" font-weight="700" fill="var(--ink)">Never published</text>
     <line x1="20" y1="90" x2="620" y2="90" stroke="var(--line)" stroke-width="2"/>
     <line x1="${X(0)}" y1="10" x2="${X(0)}" y2="205" stroke="var(--leaf)" stroke-width="2" stroke-dasharray="4 4"/>
-    <text x="${X(0)}" y="222" font-size="12" text-anchor="middle" fill="var(--muted)">true effect 0</text>
-    ${[-10,-5,5,10].map(v=>`<text x="${X(v)}" y="222" font-size="12" text-anchor="middle" fill="var(--muted)">${v>0?"+":""}${v}</text>`).join("")}`;
+    <text x="${X(0)}" y="222" font-size="16" text-anchor="middle" fill="var(--muted)">real effect: zero</text>
+    ${[-10,-5,5,10].map(v=>`<text x="${X(v)}" y="222" font-size="16" text-anchor="middle" fill="var(--muted)">${v>0?"+":""}${v}</text>`).join("")}`;
   const drawAll = (animFrom) => {
     let dots = "";
     S.pb.runs.forEach((r,i) => {
@@ -542,12 +547,12 @@ R.pubbias = () => {
     drawAll(from);
     if (S.pb.runs.length >= 20 && !S.pb.answered) askQ();
     const pub = S.pb.runs.slice(from).filter(r=>r.pub);
-    say(pub.length ? `${pub.length} of those got published, all showing a positive effect that doesn't exist.` : "Nothing published that round. Run a few more, and try 10 kitchens.", pub.length ? "think" : "idle");
+    say(pub.length ? `${pub.length} of those got published. Every one says the nudge worked. It didn't.` : "None got published that round. Try 10 kitchens and run again.", pub.length ? "think" : "idle");
   };
   $("#clear").onclick = () => { S.pb.runs = []; drawAll(0); };
   const askQ = () => {
-    $("#pbq").innerHTML = `<div class="aud fade-in"><h3>A meta-analysis averages the published trials. What does it find?</h3>
-      ${[["a","Roughly the true effect, near zero"],["b","A positive effect that isn't there"],["c","Nothing, since meta-analyses correct for this automatically"]].map(([v,t])=>`<label class="opt" data-v="${v}"><input type="radio" name="pbq" value="${v}">${t}</label>`).join("")}
+    $("#pbq").innerHTML = `<div class="aud fade-in"><h3>Someone reads only the published studies and averages them. What do they conclude?</h3>
+      ${[["a","The nudge does roughly nothing (the truth)"],["b","The nudge works, even though it doesn't"],["c","They'd get it right, because reviews always adjust for unpublished studies"]].map(([v,t])=>`<label class="opt" data-v="${v}"><input type="radio" name="pbq" value="${v}">${t}</label>`).join("")}
       <div id="pbwhy"></div></div>`;
     $$('input[name="pbq"]').forEach(inp => inp.onchange = () => {
       if (S.pb.answered) return; S.pb.answered = inp.value;
@@ -555,9 +560,9 @@ R.pubbias = () => {
       $$('input[name="pbq"]').forEach(x=>x.disabled=true);
       logEv("pubbias", "pb_answer", {answer:inp.value});
       const ok = inp.value === "b"; setScore("pubbias", ok?5:2);
-      $("#pbwhy").innerHTML = `<p class="why">Selective publication plus small samples manufactures effects. Mertens et al. (2022) found an average d of 0.45 across choice architecture studies; after Maier et al. (2022) corrected for publication bias, no evidence of an average effect remained. Notice too that bigger samples publish fewer false positives, and the ones they do publish are smaller.</p>`;
+      $("#pbwhy").innerHTML = `<p class="why">Only the lucky studies got printed, so the printed average is too high. This happens in real life: a big 2022 review of nudge studies found a clear average effect (Mertens et al.), but once researchers adjusted for the studies that were never published, no clear effect was left (Maier et al. 2022). Notice too that bigger studies get fooled by luck less often, and when they are, the fake effect is smaller.</p>`;
       $("#cont").disabled = false;
-      if (ok){ say("Exactly. The published record is a filtered sample, and the filter points one way.", "happy"); confetti(10); } else say("Only if the correction is done, and it often isn't. The filter only lets positive results through.", "oops");
+      if (ok){ say("Exactly. If you only ever see the lucky studies, a useless nudge looks like it works.", "happy"); confetti(10); } else say("Not quite. Only the lucky 'it worked!' studies got printed, so their average is too high. Reviews can adjust for this, but often don't.", "oops");
     });
   };
   drawAll(0);

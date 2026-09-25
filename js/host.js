@@ -423,24 +423,24 @@ const VIEWS = {
     const pub = dots.filter(d => d.pub), mean = pub.length ? pub.reduce((a, d) => a + d.est, 0) / pub.length : null;
     const right = [...ans.values()].filter(a => a.answer === "b").length;
     const W = 1200, H = 330, X = v => 600 + clamp(v, -14, 14) * 40;
-    let h = `<svg class="fill-svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Every trial the room ran, published above the line and file drawer below">
-      <text x="0" y="36" font-size="22" font-weight="700" fill="var(--ink)">Journal</text>
-      <text x="0" y="190" font-size="22" font-weight="700" fill="var(--ink)">File drawer</text>
+    let h = `<svg class="fill-svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Every study the room ran, published above the line and never published below">
+      <text x="0" y="36" font-size="22" font-weight="700" fill="var(--ink)">Published</text>
+      <text x="0" y="190" font-size="22" font-weight="700" fill="var(--ink)">Never published</text>
       <line x1="20" y1="120" x2="${W - 20}" y2="120" stroke="var(--line)" stroke-width="3"/>
       <line x1="${X(0)}" y1="6" x2="${X(0)}" y2="${H - 30}" stroke="var(--leaf)" stroke-width="3" stroke-dasharray="6 6"/>
-      <text x="${X(0)}" y="${H - 6}" font-size="18" text-anchor="middle" fill="var(--muted)">true effect 0</text>
+      <text x="${X(0)}" y="${H - 6}" font-size="18" text-anchor="middle" fill="var(--muted)">real effect: zero</text>
       ${[-10, -5, 5, 10].map(v => `<text x="${X(v)}" y="${H - 6}" font-size="18" text-anchor="middle" fill="var(--muted)">${v > 0 ? "+" : ""}${v}</text>`).join("")}`;
     const r = dots.length > 1500 ? 3 : dots.length > 600 ? 4 : 5.5;
     dots.forEach((d, i) => {
       const y = d.pub ? 20 + (i * 37 % 90) : 136 + (i * 53 % 150);
       h += `<circle cx="${X(d.est)}" cy="${y}" r="${d.pub ? r + 1.5 : r}" fill="${d.pub ? "var(--leaf)" : "var(--paper)"}" stroke="var(--ink)" stroke-width="1.2"/>`;
     });
-    if (mean !== null) h += `<line x1="${X(mean)}" y1="6" x2="${X(mean)}" y2="114" stroke="var(--ink)" stroke-width="4"/><text x="${X(mean) + 8}" y="112" font-size="18" font-weight="700" fill="var(--ink)">published mean ${fmt(mean)}</text>`;
+    if (mean !== null) h += `<line x1="${X(mean)}" y1="6" x2="${X(mean)}" y2="114" stroke="var(--ink)" stroke-width="4"/><text x="${X(mean) + 8}" y="112" font-size="18" font-weight="700" fill="var(--ink)">published average ${fmt(mean)}</text>`;
     h += `</svg>`;
-    return head("The publication machine", `All trials from the room. The true effect is zero.`)
+    return head("The publication machine", `Every study the room ran. The nudge really does nothing.`)
       + `<div class="pane-b" style="display:flex;flex-direction:column">
-        <div class="pb-stats" style="margin:0 0 8px"><div><b>${dots.length}</b>trials run</div><div><b>${pub.length}</b>published</div><div><b>${mean === null ? "–" : fmt(mean)}</b>published average, pp</div><div><b>0.0</b>true effect, pp</div><div><b>${ans.size ? pct(right / ans.size) : "–"}</b>got the question (${ans.size} answered)</div></div>
-        <div style="flex:1;min-height:0">${dots.length ? h : empty("No trials run yet.")}</div></div>`;
+        <div class="pb-stats" style="margin:0 0 8px"><div><b>${dots.length}</b>studies run</div><div><b>${pub.length}</b>published</div><div><b>${mean === null ? "–" : fmt(mean)}</b>average rise in the published ones</div><div><b>0.0</b>real effect</div><div><b>${ans.size ? pct(right / ans.size) : "–"}</b>got the question (${ans.size} answered)</div></div>
+        <div style="flex:1;min-height:0">${dots.length ? h : empty("No studies run yet.")}</div></div>`;
   },
 
   act4(){
