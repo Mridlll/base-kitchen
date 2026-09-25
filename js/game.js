@@ -121,6 +121,7 @@ const GREET = {
 /* ---------- navigation ---------- */
 const stage = $("#stage");
 function go(i){
+  keepPage(); closeLookback(true);
   const L = live(); if (L && !L.allow(i)) return;
   S.screen = i; hintIdx = 0; render();
   if (L) L.entered(i);
@@ -131,9 +132,66 @@ function render(){
   const name = SCREENS[S.screen];
   stage.innerHTML = ""; stage.className = "fade-in"; void stage.offsetWidth;
   R[name]();
+  stage.dataset.screen = S.screen;
+  addBackLink();
   drawThali();
   say(GREET[name], name === "debrief" ? "happy" : "idle");
 }
+
+/* ---------- looking back at earlier pages ----------
+   Each page is kept exactly as the player left it (answers, marks, notes) and
+   shown read-only on top of the current one, which stays as it was underneath. */
+let pages = {}, lb = null, lbScroll = 0;
+const PAGE_NAMES = {intro:"the introduction", act1:"Act 1", act2:"Act 2", forecast:"the forecasts", act3:"Act 3", pubbias:"the publication machine", act4:"Act 4", darkpat:"the checkout", act5:"Act 5", debrief:"the debrief"};
+function keepPage(){
+  if (stage.dataset.screen !== String(S.screen)) return;   // not showing a game page (e.g. a hold card)
+  const c = stage.cloneNode(true), live = $$("input", stage);
+  $$("input", c).forEach((x, i) => { x.setAttribute("value", live[i].value); live[i].checked ? x.setAttribute("checked", "") : x.removeAttribute("checked"); });
+  $$(".back-link", c).forEach(x => x.remove());
+  $$("[id]", c).forEach(x => x.removeAttribute("id"));
+  $$("[name]", c).forEach(x => x.removeAttribute("name"));
+  pages[S.screen] = c.innerHTML;
+}
+function earlier(){
+  const onPage = stage.dataset.screen === String(S.screen);
+  return Object.keys(pages).map(Number).filter(k => k < S.screen || (k === S.screen && !onPage)).sort((a, b) => a - b);
+}
+function addBackLink(){
+  const list = earlier(); if (!list.length) return;
+  const last = list[list.length - 1], b = document.createElement("button");
+  b.type = "button"; b.className = "back-link"; b.textContent = `← Look back at ${PAGE_NAMES[SCREENS[last]]}`;
+  b.onclick = () => openLookback(last);
+  stage.prepend(b);
+}
+function openLookback(i){
+  const list = earlier(), k = list.indexOf(i); if (k < 0) return;
+  if (!lb){
+    lbScroll = window.scrollY;
+    lb = document.createElement("section"); lb.className = "lookback fade-in"; lb.setAttribute("aria-label", "An earlier page, read-only");
+    stage.before(lb); stage.hidden = true;
+    bubble.classList.add("hide");   // Ragi's line is about the current page, not this one
+    document.addEventListener("keydown", lbKey);
+  }
+  lb.innerHTML = `
+    <div class="lb-bar"><span class="lb-what">Looking back at <b>${PAGE_NAMES[SCREENS[i]]}</b></span>
+      <span class="lb-nav">
+        <button class="btn ghost" type="button" data-to="${k > 0 ? list[k-1] : ""}" ${k > 0 ? "" : "disabled"}>← Earlier</button>
+        <button class="btn ghost" type="button" data-to="${k < list.length-1 ? list[k+1] : ""}" ${k < list.length-1 ? "" : "disabled"}>Later →</button>
+        <button class="btn" type="button" data-done>Back to where I was</button>
+      </span></div>
+    <div class="lb-page" inert>${pages[i]}</div>`;
+  $$("[data-to]", lb).forEach(b => b.onclick = () => openLookback(+b.dataset.to));
+  $("[data-done]", lb).onclick = () => closeLookback();
+  window.scrollTo({top:0});
+  $("[data-done]", lb).focus({preventScroll:true});
+}
+function closeLookback(quiet){
+  if (!lb) return;
+  lb.remove(); lb = null; stage.hidden = false;
+  document.removeEventListener("keydown", lbKey);
+  if (!quiet){ window.scrollTo({top:lbScroll}); stage.focus({preventScroll:true}); }
+}
+const lbKey = e => { if (e.key === "Escape") closeLookback(); };
 function next(){ go(S.screen + 1); }
 function complete(key){ S.done.add(key); drawThali(); }
 
@@ -777,14 +835,16 @@ R.debrief = () => {
   const big = $("#bigScore");
   if (reduced) big.textContent = t;
   else { let n = 0; const step = () => { n = Math.min(t, n + Math.max(1, Math.ceil((t-n)/8))); big.textContent = n; if (n < t) requestAnimationFrame(step); else if (t >= 60) confetti(30); }; requestAnimationFrame(step); }
-  $("#again").onclick = () => { seed = Math.floor(Math.random()*1e9); rand = mulberry32(seed); fresh(); $("#scoreNum").textContent = "0"; go(0); };
+  $("#again").onclick = () => { seed = Math.floor(Math.random()*1e9); rand = mulberry32(seed); fresh(); pages = {}; $("#scoreNum").textContent = "0"; go(0); };
 };
 
 /* ---------- boot ---------- */
 // js/live.js, when present, decides between the join screen, a resumed live game and solo.
 const api = {
-  SCREENS, reduced, go, render, say, total,
+  SCREENS, reduced, go, render, say, total, addBackLink,
   state: () => S,
+  pages: () => pages,
+  setPages(p){ pages = p || {}; },
   load(o){
     fresh();
     Object.assign(S, o, {done:new Set(o.done || []), levers:new Set(o.levers || [])});

@@ -37,11 +37,12 @@ const L = window.BKLive = { active:false, boot, log, score, allow, entered };
 
 const snapKey = () => `bk-live-${code}-${uid}`;
 const queueKey = () => `bk-queue-${uid}`;
+const pagesKey = () => `bk-pages-${code}-${uid}`;
 const stage = () => $("#stage");
 
 function paint(html){
   const st = stage();
-  st.innerHTML = html; st.className = ""; void st.offsetWidth; st.className = "fade-in";
+  st.innerHTML = html; st.dataset.screen = ""; st.className = ""; void st.offsetWidth; st.className = "fade-in";
   window.scrollTo({top:0, behavior: G.reduced ? "auto" : "smooth"});
   st.focus({preventScroll:true});
 }
@@ -119,7 +120,7 @@ function join(prefill, err){
         {id:uid, room_code:c, display_name:name, screen:0, waiting:false, total:0, updated_at:new Date().toISOString()},
         {onConflict:"id"});
       if (error) throw error;
-      code = c; store.del(snapKey());
+      code = c; store.del(snapKey()); store.del(pagesKey());
       start(r, null);
     } catch (ex) {
       console.error(ex);
@@ -166,6 +167,7 @@ function start(r, snap){
   window.addEventListener("offline", setDot);
   if (snap){
     G.load(snap);
+    G.setPages(store.get(pagesKey()));
     dirtyScores = {...G.state().score}; dirtyPlayer = true;   // resync everything this browser knows
     G.go(snap.screen);
   } else {
@@ -214,6 +216,8 @@ function allow(i){
     <div class="brief"><p>Next up is <b>${esc(name)}</b>. Your facilitator will open it for everyone together. This page moves on by itself, so there's no need to refresh.</p></div>
     <p class="meta">Your score so far: <b>${Math.round(G.total())}</b></p>`);
   G.say("Waiting for your facilitator to open the next act. Good moment for a sip of chai.", "think");
+  G.addBackLink();
+  store.set(pagesKey(), G.pages());
   return false;
 }
 
@@ -221,6 +225,7 @@ function allow(i){
 function entered(i){
   pendingScreen = null;
   saveSnap(i);
+  store.set(pagesKey(), G.pages());
   dirtyPlayer = true; schedule();
 }
 

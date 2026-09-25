@@ -44,6 +44,8 @@ These steps only need doing once per Supabase project.
 5. **Export CSV** downloads two files: `…-events.csv` and `…-scores.csv`.
 6. **Close room** stops recording. Players can finish playing. Closed rooms stay in the *Rooms* list, where you can replay them for a debrief.
 
+Players can look back at any page they've finished with the *Look back* link at the top of each screen, including while they're held at the pacing gate. Earlier pages are shown read-only, exactly as they left them, and the host opening the next act moves them on with everyone else.
+
 Players who refresh mid-game carry on from the same screen with the same score. The exception is a screen they hadn't finished: that one starts again. If the connection drops, play continues. Writes are queued in the browser and sent on reconnect, and the dot in the top bar shows whether it's live.
 
 ## Data
